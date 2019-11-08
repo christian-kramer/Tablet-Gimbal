@@ -2,23 +2,22 @@
 {
     class Kalman
     {
-        public float estimate;
-        public float estimate_error;
-        public float measurement;
-        public float measurement_error;
+        public double estimate;
+        public double estimate_error;
+        public double measurement_error;
 
-        private float previous_estimate;
-        private float previous_estimate_error;
-        private float kalman_gain;
+        private double previous_estimate;
+        private double previous_estimate_error;
+        private double kalman_gain;
 
-        public Kalman(float initial_estimate, float initial_estimate_error, float initial_measurement_error)
+        public Kalman(double initial_estimate, double initial_estimate_error, double initial_measurement_error)
         {
             estimate = initial_estimate;
             estimate_error = initial_estimate_error;
             measurement_error = initial_measurement_error;
         }
 
-        public float filter(float this_measurement)
+        public double filter(double this_measurement)
         {
             kalman_gain = estimate_error / (estimate_error + measurement_error);
 

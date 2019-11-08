@@ -39,6 +39,10 @@ namespace MyFirstSensorProject
         private System.Timers.Timer myTimer;
 
         private Inclinometer _inclinometer;
+        private float pitch_raw;
+        private Kalman pitch_kalman;
+        private Kalman roll_kalman;
+        private Kalman yaw_kalman;
         public MyFirstSensorContext()
         {
             var exitMenuItem = new MenuItem("Exit", OnExitClick);
@@ -74,6 +78,9 @@ namespace MyFirstSensorProject
 
                 // Establish the event handler
                 _inclinometer.ReadingChanged += new TypedEventHandler<Inclinometer, InclinometerReadingChangedEventArgs>(ReadingChanged);
+                pitch_kalman = new Kalman(10, 100, 0.01);
+                roll_kalman = new Kalman(45, 5, 0.01);
+                yaw_kalman = new Kalman(10, 5, 3);
             }
             else
             {
@@ -88,9 +95,18 @@ namespace MyFirstSensorProject
             {
                 InclinometerReading reading = e.Reading;
 
-                Console.WriteLine("Pitch: {0,5:0.00}", reading.PitchDegrees);
+                pitch_raw = reading.PitchDegrees;
+                pitch_kalman.filter(reading.PitchDegrees);
+
+                /*
+                Console.WriteLine("\n\n\n\nPitch: {0,5:0.00}", reading.PitchDegrees);
                 Console.WriteLine("Roll: {0,5:0.00}", reading.RollDegrees);
                 Console.WriteLine("Yaw: {0,5:0.00}", reading.YawDegrees);
+
+                Console.WriteLine("Kalman Pitch: {0,5:0.00}", pitch_kalman.filter(reading.PitchDegrees));
+                Console.WriteLine("Kalman Roll: {0,5:0.00}", roll_kalman.filter(reading.RollDegrees));
+                Console.WriteLine("Kalman Yaw: {0,5:0.00}\n\n\n\n", yaw_kalman.filter(reading.YawDegrees));
+                */
             }
         }
 
@@ -98,12 +114,19 @@ namespace MyFirstSensorProject
         private void OnTimedEvent(object source, ElapsedEventArgs e)
         {
             //Debug.WriteLine("Timer Function Hit at {0:HH:mm:ss.fff}", e.SignalTime);
+            /*
             Kalman kalman = new Kalman(68, 2, 4);
             Debug.WriteLine(kalman.filter(75).ToString());
             Debug.WriteLine(kalman.filter(71).ToString());
             Debug.WriteLine(kalman.filter(70).ToString());
             Debug.WriteLine(kalman.filter(74).ToString());
+            */
 
+            Console.WriteLine("Pitch: {0,5:0.00}", pitch_raw);
+            if (pitch_kalman != null)
+            {
+                Console.WriteLine("Kalman Pitch: {0,5:0.00}", pitch_kalman.estimate);
+            }
         }
 
         private void _notifyIconClick(object sender, EventArgs e)
