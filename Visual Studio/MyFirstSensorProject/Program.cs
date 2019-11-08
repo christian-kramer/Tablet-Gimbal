@@ -60,7 +60,7 @@ namespace MyFirstSensorProject
 
             _notifyIcon.Click += new EventHandler(_notifyIconClick);
 
-            myTimer = new System.Timers.Timer(500);
+            myTimer = new System.Timers.Timer(1000);
             myTimer.Elapsed += OnTimedEvent;
             myTimer.AutoReset = true;
             myTimer.Enabled = true;
@@ -98,6 +98,12 @@ namespace MyFirstSensorProject
         private void OnTimedEvent(object source, ElapsedEventArgs e)
         {
             //Debug.WriteLine("Timer Function Hit at {0:HH:mm:ss.fff}", e.SignalTime);
+            Kalman kalman = new Kalman(68, 2, 4);
+            Debug.WriteLine(kalman.filter(75).ToString());
+            Debug.WriteLine(kalman.filter(71).ToString());
+            Debug.WriteLine(kalman.filter(70).ToString());
+            Debug.WriteLine(kalman.filter(74).ToString());
+
         }
 
         private void _notifyIconClick(object sender, EventArgs e)
