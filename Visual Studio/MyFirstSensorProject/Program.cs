@@ -8,6 +8,9 @@ using System.Reflection;
 using System.IO;
 using System.Diagnostics;
 using System.Timers;
+using Windows.Devices.Sensors;
+using Windows.Foundation;
+using Windows.System.Threading;
 
 namespace MyFirstSensorProject
 {
@@ -34,6 +37,8 @@ namespace MyFirstSensorProject
         private Icon disabledIcon;
 
         private System.Timers.Timer myTimer;
+
+        private Inclinometer _inclinometer;
         public MyFirstSensorContext()
         {
             var exitMenuItem = new MenuItem("Exit", OnExitClick);
@@ -59,16 +64,44 @@ namespace MyFirstSensorProject
             myTimer.Elapsed += OnTimedEvent;
             myTimer.AutoReset = true;
             myTimer.Enabled = true;
+
+            _inclinometer = Inclinometer.GetDefault();
+            if (_inclinometer != null)
+            {
+                uint minReportInterval = _inclinometer.MinimumReportInterval;
+                uint reportInterval = minReportInterval > 16 ? minReportInterval : 16;
+                _inclinometer.ReportInterval = reportInterval;
+
+                // Establish the event handler
+                _inclinometer.ReadingChanged += new TypedEventHandler<Inclinometer, InclinometerReadingChangedEventArgs>(ReadingChanged);
+            }
+            else
+            {
+                Debug.WriteLine("No Inclinometer Detected!");
+                Console.WriteLine("No Inclinometer Detected!");
+            }
         }
+
+        private void ReadingChanged(object sender, InclinometerReadingChangedEventArgs e)
+        {
+            if (state)
+            {
+                InclinometerReading reading = e.Reading;
+
+                Console.WriteLine("Pitch: {0,5:0.00}", reading.PitchDegrees);
+                Console.WriteLine("Roll: {0,5:0.00}", reading.RollDegrees);
+                Console.WriteLine("Yaw: {0,5:0.00}", reading.YawDegrees);
+            }
+        }
+
 
         private void OnTimedEvent(object source, ElapsedEventArgs e)
         {
-            Debug.WriteLine("Timer Function Hit at {0:HH:mm:ss.fff}", e.SignalTime);
+            //Debug.WriteLine("Timer Function Hit at {0:HH:mm:ss.fff}", e.SignalTime);
         }
 
         private void _notifyIconClick(object sender, EventArgs e)
         {
-            Debug.WriteLine(sender.ToString());
             state = !state;
             myTimer.Enabled = state;
             if (state)
