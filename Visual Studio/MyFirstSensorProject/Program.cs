@@ -11,6 +11,9 @@ using System.Timers;
 using Windows.Devices.Sensors;
 using Windows.Foundation;
 using Windows.System.Threading;
+using System.Management;
+using System.Text.RegularExpressions;
+using System.IO.Ports;
 
 namespace MyFirstSensorProject
 {
@@ -29,10 +32,16 @@ namespace MyFirstSensorProject
         }
     }
 
+    class DeviceDescriptor
+    {
+        public string DeviceName { get; set; }
+        public string DeviceID { get; set; }
+    }
+
     internal class MyFirstSensorContext : ApplicationContext
     {
         private NotifyIcon _notifyIcon;
-        private bool state = true;
+        private bool state = false;
         private Icon enabledIcon;
         private Icon disabledIcon;
 
@@ -43,6 +52,9 @@ namespace MyFirstSensorProject
         private Kalman pitch_kalman;
         private Kalman roll_kalman;
         private Kalman yaw_kalman;
+
+        private SerialPort _serialPort;
+
         public MyFirstSensorContext()
         {
             var exitMenuItem = new MenuItem("Exit", OnExitClick);
@@ -55,9 +67,12 @@ namespace MyFirstSensorProject
 
             enabledIcon = new Icon(enabledIconStream);
             disabledIcon = new Icon(disabledIconStream);
+
+            Icon defaultIcon = state ? enabledIcon : disabledIcon;
+
             _notifyIcon = new NotifyIcon
             {
-                Icon = enabledIcon,
+                Icon = defaultIcon,
                 ContextMenu = new ContextMenu(new[] { exitMenuItem }),
                 Visible = true
             };
@@ -67,7 +82,7 @@ namespace MyFirstSensorProject
             myTimer = new System.Timers.Timer(1000);
             myTimer.Elapsed += OnTimedEvent;
             myTimer.AutoReset = true;
-            myTimer.Enabled = true;
+            myTimer.Enabled = state;
 
             _inclinometer = Inclinometer.GetDefault();
             if (_inclinometer != null)
@@ -87,6 +102,11 @@ namespace MyFirstSensorProject
                 Debug.WriteLine("No Inclinometer Detected!");
                 Console.WriteLine("No Inclinometer Detected!");
             }
+
+
+            Console.WriteLine("\n\n\n");
+
+            FindGimbalOnSystem();
         }
 
         private void ReadingChanged(object sender, InclinometerReadingChangedEventArgs e)
@@ -129,9 +149,153 @@ namespace MyFirstSensorProject
             }
         }
 
-        private void _notifyIconClick(object sender, EventArgs e)
+        /*
+        private void GetAllBluetoothDevices()
         {
-            state = !state;
+            ManagementObjectCollection ManObjReturn;
+            ManagementObjectSearcher ManObjSearch;
+            ManObjSearch = new ManagementObjectSearcher("Select * from Win32_PnPEntity");
+            ManObjReturn = ManObjSearch.Get();
+            int deviceCount = 0;
+
+            foreach (ManagementObject ManObj in ManObjReturn)
+            {
+                if ((string)ManObj["ClassGUID"] == "{e0cbf06c-cd8b-4647-bb8a-263b43f0f974}")
+                {
+                    // Do something with ManObj["Name"] such as Add to a <List>
+                    Console.WriteLine("\n\n\n");
+                    Console.WriteLine("The following is a bluetooth device:");
+                    Console.WriteLine(ManObj["Name"] + "\n");
+                    Console.WriteLine(ManObj["DeviceId"] + "\n");
+                    /*
+                    foreach (System.Management.PropertyData prop in ManObj.Properties)
+                    {
+                        Console.WriteLine("{0}: {1}", prop.Name, prop.Value);
+                    }
+                    */
+                    /*
+                    deviceCount++;
+                }
+            }
+
+            if (deviceCount > 0)
+            {
+                Console.WriteLine("Found " + deviceCount + " Bluetooth Devices");
+            }
+            else
+            {
+                Debug.WriteLine("Found No Bluetooth Devices");
+            }
+        }
+        */
+
+        private void FindGimbalOnSystem()
+        {
+            List<DeviceDescriptor> BluetoothDevices = new List<DeviceDescriptor>();
+            foreach (ManagementObject ManObj in GetAllDevicesByGUID("{e0cbf06c-cd8b-4647-bb8a-263b43f0f974}"))
+            {
+                Regex idFinder = new Regex(@"(?!_)(?:.(?!_))+$");
+                Match idMatch = idFinder.Match((string)ManObj["DeviceID"]);
+                BluetoothDevices.Add(new DeviceDescriptor { DeviceName = (string)ManObj["Name"], DeviceID = idMatch.Value });
+                Console.WriteLine("Found " + ManObj["Name"]);
+            }
+
+            //Now we have a list of bluetooth devices. Let's iterate over every COM port and see if any of the bluetooth devices' IDs match up.
+
+            List<string> rawPortList = new List<string>();
+            foreach (ManagementObject ManObj in GetAllDevicesByGUID("{4d36e978-e325-11ce-bfc1-08002be10318}"))
+            {
+                string COMPortID = (string)ManObj["DeviceID"];
+
+                Console.WriteLine("Found Second Pass: " + ManObj["Name"]);
+
+                foreach (DeviceDescriptor BluetoothDevice in BluetoothDevices)
+                {
+                    if (COMPortID.Contains(BluetoothDevice.DeviceID))
+                    {
+                        Console.WriteLine("Identified " + BluetoothDevice.DeviceName + " as a potential gimbal to listen to");
+                        Regex portFinder = new Regex(@"(?!\()\w+(?=\))");
+                        Match portMatch = portFinder.Match((string)ManObj["Caption"]);
+                        rawPortList.Add(portMatch.Value);
+
+
+                        /*
+                        foreach (PropertyData prop in ManObj.Properties)
+                        {
+                            Console.WriteLine("{0}: {1}", prop.Name, prop.Value);
+                        }
+                        Console.WriteLine("\n\n\n");
+                        */
+                    }
+                }
+            }
+            List<string> dedupedPortList = rawPortList.Distinct().ToList();
+
+            foreach (string port in dedupedPortList)
+            {
+                Console.WriteLine("\n\nCOM Port Listen Attempt: " + port);
+
+                _serialPort = new SerialPort();
+
+                _serialPort.PortName = port;
+                _serialPort.BaudRate = 9600;
+                _serialPort.Parity = Parity.None;
+                _serialPort.DataBits = 8;
+                _serialPort.StopBits = StopBits.One;
+                _serialPort.Handshake = Handshake.None;
+                
+                try
+                {
+                    _serialPort.Open();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(port + " failed to open.");
+                }
+
+                if (_serialPort != null)
+                {
+                    if (_serialPort.IsOpen)
+                    {
+                        Console.WriteLine(port + " is open, let's listen!");
+                        _serialPort.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
+
+                        void DataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
+                        {
+                            SerialPort sp = (SerialPort)sender;
+                            string indata = sp.ReadExisting();
+                            Console.Write(indata);
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine(port + " is not open.");
+                }
+            }
+        }
+        private List<ManagementObject> GetAllDevicesByGUID(string guid)
+        {
+            ManagementObjectCollection ManObjReturn;
+            ManagementObjectSearcher ManObjSearch;
+            ManObjSearch = new ManagementObjectSearcher("Select * from Win32_PnPEntity");
+            ManObjReturn = ManObjSearch.Get();
+            List<ManagementObject> devices = new List<ManagementObject>();
+
+            foreach (ManagementObject ManObj in ManObjReturn)
+            {
+                if ((string)ManObj["ClassGUID"] == guid)
+                {
+                    devices.Add(ManObj);
+                }
+            }
+
+            return devices;
+        }
+
+        private void SetGimbalState(bool setstate)
+        {
+            state = setstate;
             myTimer.Enabled = state;
             if (state)
             {
@@ -143,6 +307,11 @@ namespace MyFirstSensorProject
                 Debug.WriteLine("Gimbal Off");
                 _notifyIcon.Icon = disabledIcon;
             }
+        }
+
+        private void _notifyIconClick(object sender, EventArgs e)
+        {
+            SetGimbalState(!state);
         }
 
         private void OnExitClick(object sender, EventArgs e)
