@@ -250,7 +250,7 @@ namespace MyFirstSensorProject
                 {
                     _serialPort.Open();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     Console.WriteLine(port + " failed to open.");
                 }
@@ -316,6 +316,7 @@ namespace MyFirstSensorProject
                         if (t.Status == TaskStatus.RanToCompletion)
                         {
                             Console.WriteLine(", Result: {0}", t.Result);
+                            _serialPort.Close();
                         }
                         else
                         {
