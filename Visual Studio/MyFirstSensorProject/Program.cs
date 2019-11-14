@@ -14,6 +14,7 @@ using Windows.System.Threading;
 using System.Management;
 using System.Text.RegularExpressions;
 using System.IO.Ports;
+using System.Threading;
 
 namespace MyFirstSensorProject
 {
@@ -229,6 +230,7 @@ namespace MyFirstSensorProject
                     }
                 }
             }
+
             List<string> dedupedPortList = rawPortList.Distinct().ToList();
 
             foreach (string port in dedupedPortList)
@@ -258,13 +260,66 @@ namespace MyFirstSensorProject
                     if (_serialPort.IsOpen)
                     {
                         Console.WriteLine(port + " is open, let's listen!");
-                        _serialPort.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
+
+                        string indata = null;
+
+                        CancellationTokenSource source = new CancellationTokenSource();
+
+                        var t = Task.Run(async delegate
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(10), source.Token);
+                            return indata;
+                        });
 
                         void DataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
                         {
                             SerialPort sp = (SerialPort)sender;
-                            string indata = sp.ReadExisting();
+                            indata = sp.ReadExisting();
                             Console.Write(indata);
+                            if (indata == "oof")
+                            {
+                                Console.WriteLine("Magic string was written");
+                                source.Cancel();
+                            }
+                            else
+                            {
+                                Console.WriteLine("Magic string was not written");
+                            }
+                        }
+
+                        _serialPort.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
+
+                        try
+                        {
+                            t.Wait();
+                        }
+                        catch (AggregateException ae)
+                        {
+                            ae.Handle(ex =>
+                            {
+                                if (ex is OperationCanceledException)
+                                {
+                                    Console.WriteLine("Safe to assume task was canceled.");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("This is out here");
+                                }
+
+                                return ex is OperationCanceledException;
+                            });
+                        }
+
+                        //It is incredibly important that when we decide this COM port is not correct, we dispose of it properly. It blocks the port until garbage collected.
+
+                        Console.WriteLine("Task t Status: {0}", t.Status);
+                        if (t.Status == TaskStatus.RanToCompletion)
+                        {
+                            Console.WriteLine(", Result: {0}", t.Result);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Task did not run to completion, interrupted");
                         }
                     }
                 }
@@ -273,6 +328,8 @@ namespace MyFirstSensorProject
                     Console.WriteLine(port + " is not open.");
                 }
             }
+            
+            Console.WriteLine("End of Foreach Loop");
         }
         private List<ManagementObject> GetAllDevicesByGUID(string guid)
         {
