@@ -301,26 +301,22 @@ namespace MyFirstSensorProject
                                 {
                                     Console.WriteLine("Safe to assume task was canceled.");
                                 }
-                                else
-                                {
-                                    Console.WriteLine("This is out here");
-                                }
 
                                 return ex is OperationCanceledException;
                             });
                         }
 
-                        //It is incredibly important that when we decide this COM port is not correct, we dispose of it properly. It blocks the port until garbage collected.
 
-                        Console.WriteLine("Task t Status: {0}", t.Status);
                         if (t.Status == TaskStatus.RanToCompletion)
                         {
-                            Console.WriteLine(", Result: {0}", t.Result);
+                            //Console.WriteLine("Result: {0}", t.Result);
+                            Console.WriteLine("Yeah, nah. Let's move on.");
                             _serialPort.Close();
                         }
                         else
                         {
-                            Console.WriteLine("Task did not run to completion, interrupted");
+                            Console.WriteLine("Woo hoo! Found it!");
+                            break;
                         }
                     }
                 }
