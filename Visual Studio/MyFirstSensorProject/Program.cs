@@ -327,6 +327,11 @@ namespace MyFirstSensorProject
             }
             
             Console.WriteLine("End of Foreach Loop");
+
+            //This is where we decide what to return, based on what has happened. Then, let's enable the gimbal!
+            //And, of course, if nothing happened and no gimbal is present, we need to have some sort of "try again" logic.
+            //It has to be able to work in the middle of the runtime, so that if the gimbal battery gets switched, it reconnects.
+            //Maybe another async task that this whole thing is enclosed in?
         }
         private List<ManagementObject> GetAllDevicesByGUID(string guid)
         {

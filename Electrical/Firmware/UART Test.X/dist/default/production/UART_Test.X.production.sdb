@@ -1,0 +1,68 @@
+[p LITE_MODE AUTOSTATIC IEEE_DBL IEEE_FLT PIC14 PICREGULAR PICMID ]
+[d version 1.1 ]
+[d edition pro ]
+[d chip 16LF627A ]
+[d frameptr 6 ]
+"5 C:\Program Files (x86)\Microchip\xc8\v2.00\pic\sources\c90\common\aldiv.c
+[v ___aldiv __aldiv `(l  1 e 4 0 ]
+"10 C:\Program Files (x86)\Microchip\xc8\v2.00\pic\sources\c90\common\sprcadd.c
+[v ___fladd __fladd `(d  1 e 4 0 ]
+"4 C:\Program Files (x86)\Microchip\xc8\v2.00\pic\sources\c90\common\Umul8_16.c
+[v __Umul8_16 _Umul8_16 `(ui  1 e 2 0 ]
+"6 C:\Program Files (x86)\Microchip\xc8\v2.00\pic\sources\c90\pic\__eeprom.c
+[v ___eecpymem __eecpymem `(v  1 e 1 0 ]
+"39
+[v ___memcpyee __memcpyee `(v  1 e 1 0 ]
+"28 L:\Documents\GitHub\Tablet-Gimbal\Electrical\Firmware\UART Test.X\main.c
+[v _UART_Init UART_Init `(uc  1 e 1 0 ]
+"58
+[v _UART_Write UART_Write `(v  1 e 1 0 ]
+"71
+[v _main main `(i  1 e 2 0 ]
+"228 C:\Program Files (x86)\Microchip\xc8\v2.00\pic\include\pic16lf627a.h
+[v _PORTB PORTB `VEuc  1 e 1 @6 ]
+"682
+[v _RCSTA RCSTA `VEuc  1 e 1 @24 ]
+"753
+[v _TXREG TXREG `VEuc  1 e 1 @25 ]
+"969
+[v _TRISB TRISB `VEuc  1 e 1 @134 ]
+"1144
+[v _TXSTA TXSTA `VEuc  1 e 1 @152 ]
+"1201
+[v _SPBRG SPBRG `VEuc  1 e 1 @153 ]
+"71 L:\Documents\GitHub\Tablet-Gimbal\Electrical\Firmware\UART Test.X\main.c
+[v _main main `(i  1 e 2 0 ]
+{
+"82
+} 0
+"58
+[v _UART_Write UART_Write `(v  1 e 1 0 ]
+{
+[v UART_Write@data data `uc  1 a 1 wreg ]
+[v UART_Write@data data `uc  1 a 1 wreg ]
+[v UART_Write@data data `uc  1 a 1 1 ]
+"62
+} 0
+"28
+[v _UART_Init UART_Init `(uc  1 e 1 0 ]
+{
+"29
+[v UART_Init@x x `ui  1 a 2 9 ]
+"28
+[v UART_Init@baudrate baudrate `DCl  1 p 4 6 ]
+"56
+} 0
+"5 C:\Program Files (x86)\Microchip\xc8\v2.00\pic\sources\c90\common\aldiv.c
+[v ___aldiv __aldiv `(l  1 e 4 0 ]
+{
+"10
+[v ___aldiv@quotient quotient `l  1 a 4 2 ]
+"11
+[v ___aldiv@sign sign `uc  1 a 1 1 ]
+[v ___aldiv@counter counter `uc  1 a 1 0 ]
+"5
+[v ___aldiv@divisor divisor `l  1 p 4 0 ]
+[v ___aldiv@dividend dividend `l  1 p 4 4 ]
+"41
+} 0
