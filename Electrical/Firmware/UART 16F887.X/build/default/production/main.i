@@ -2712,10 +2712,10 @@ char UART_Init(const long int baudrate) {
         SYNC = 0;
         SPEN = 1;
         CREN = 1;
-        RCIE = 1;
-        PEIE = 1;
-        GIE = 1;
         TXEN = 1;
+        PIE1 |= 1ULL << 5;
+        INTCON |= 1ULL << 7;
+        INTCON |= 1ULL << 6;
         return 1;
     }
     return 0;
@@ -2727,11 +2727,22 @@ void UART_Write(char data)
   TXREG = data;
 }
 
+
+
+
+
+
+
 void UART_Write_Text(char *text)
 {
   int i;
   for(i=0;text[i]!='\0';i++)
     UART_Write(text[i]);
+}
+
+
+__attribute__((picinterrupt(""))) void ISR(void) {
+    PORTD = RCREG;
 }
 
 int main(int argc, char** argv) {
@@ -2744,12 +2755,15 @@ int main(int argc, char** argv) {
 
     UART_Init(9600);
     TRISD = 0x00;
+
+
+
+    PORTD = 0x00;
+
     while (1) {
-        PORTD = 0xff;
-        UART_Write_Text("Why hello there\n");
+        UART_Write_Text("Why hello there\r\n");
         _delay((unsigned long)((1000)*(8000000/4000.0)));
-        PORTD = 0x00;
-        UART_Write_Text("Ayy Lmao\n");
+        UART_Write_Text("Ayy Lmao\r\n");
         _delay((unsigned long)((1000)*(8000000/4000.0)));
     }
     return (0);
