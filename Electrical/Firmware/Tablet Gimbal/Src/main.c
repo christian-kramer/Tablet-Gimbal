@@ -20,6 +20,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "string.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -64,9 +65,16 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   if (huart->Instance == USART1)
   {
-	HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);
+	  if (bigbyte == 0b00110001)
+	  {
+		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, RESET);
+		  HAL_UART_Transmit(&huart1, oofbuffer, 4, 100);
+	  }
+	  else
+	  {
+		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, SET);
+	  }
     /* Transmit one byte with 100 ms timeout */
-    HAL_UART_Transmit(&huart1, oofbuffer, 4, 100);
   }
 }
 /* USER CODE END 0 */
