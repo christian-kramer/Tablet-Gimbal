@@ -57,9 +57,8 @@
 
 /* External variables --------------------------------------------------------*/
 extern UART_HandleTypeDef huart1;
-extern uint8_t bigbyte;
 /* USER CODE BEGIN EV */
-
+extern uint8_t bigbyte;
 /* USER CODE END EV */
 
 /******************************************************************************/

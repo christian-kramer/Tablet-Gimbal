@@ -20,11 +20,11 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "string.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "string.h"
+#include "stdbool.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -58,23 +58,58 @@ static void MX_USART1_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-unsigned char* oofbuffer = "oof\n";
+bool acknowledged = false;
+unsigned char* initialresponse = "ayy\n";
 uint8_t bigbyte;
+
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   if (huart->Instance == USART1)
   {
+	  //We've got data on UART!
+
 	  if (bigbyte == 0b00110001)
 	  {
 		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, RESET);
-		  HAL_UART_Transmit(&huart1, oofbuffer, 4, 100);
+		  HAL_UART_Transmit(&huart1, initialresponse, 4, 100);
+		  acknowledged = true;
 	  }
 	  else
 	  {
-		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, SET);
+		  //This will be a movement instruction.
+
+		  //Before doing the following, let's just toggle an LED upon receiving "a" or something. Prove it's getting the message.
+
+		  if (bigbyte == 0b01100001)
+		  {
+			  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, RESET);
+			  int i = 0;
+			  while (i < 1000) { i++; }
+			  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, SET);
+		  }
+		  /*
+
+		  //First, un-sleep A4988 (make sure reset pin isn't causing issues)
+		  HAL_GPIO_WritePin(GPIOA, STEP_SLP_Pin, SET);
+
+		  //Next, set direction
+		  HAL_GPIO_WritePin(GPIOA, STEP_DIR_Pin, SET);
+
+		  //Next, set microsteps
+		  HAL_GPIO_WritePin(GPIOA, STEP_MS1_Pin, RESET);
+		  HAL_GPIO_WritePin(GPIOA, STEP_MS2_Pin, RESET);
+		  HAL_GPIO_WritePin(GPIOA, STEP_MS3_Pin, RESET);
+
+		  //Then, step
+		  for (int i = 0; i < 200; i++)
+		  {
+			  HAL_GPIO_WritePin(GPIOA, STEP_STEP_Pin, SET);
+			  HAL_Delay(1);
+			  HAL_GPIO_WritePin(GPIOA, STEP_STEP_Pin, RESET);
+		  }
+		  */
 	  }
-    /* Transmit one byte with 100 ms timeout */
   }
 }
 /* USER CODE END 0 */
@@ -110,15 +145,21 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   __HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
-  unsigned char* buffer = "kek\n";
+  unsigned char* transmitstring = "abcd";
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  HAL_UART_Transmit(&huart1, buffer, sizeof(buffer), HAL_MAX_DELAY);
-	  HAL_Delay(1000);
+	  if (!acknowledged)
+	  {
+		  //This is the startup position, where "oof" is broadcast continually.
+		  //"acknowleded" becomes false when we get a move instruction.
+		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, SET);
+		  HAL_UART_Transmit(&huart1, transmitstring, sizeof(transmitstring), HAL_MAX_DELAY);
+		  HAL_Delay(1000);
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -218,7 +259,20 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, STEP_DIR_Pin|STEP_STEP_Pin|STEP_SLP_Pin|STEP_MS1_Pin 
+                          |STEP_MS2_Pin|STEP_MS3_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : STEP_DIR_Pin STEP_STEP_Pin STEP_SLP_Pin STEP_MS1_Pin 
+                           STEP_MS2_Pin STEP_MS3_Pin */
+  GPIO_InitStruct.Pin = STEP_DIR_Pin|STEP_STEP_Pin|STEP_SLP_Pin|STEP_MS1_Pin 
+                          |STEP_MS2_Pin|STEP_MS3_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB1 */
   GPIO_InitStruct.Pin = GPIO_PIN_1;
