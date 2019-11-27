@@ -15,6 +15,7 @@ using System.Management;
 using System.Text.RegularExpressions;
 using System.IO.Ports;
 using System.Threading;
+using System.Text;
 
 namespace MyFirstSensorProject
 {
@@ -107,7 +108,14 @@ namespace MyFirstSensorProject
 
             Console.WriteLine("\n\n\n");
 
-            FindGimbalOnSystem();
+            if (FindGimbalOnSystem())
+            {
+                SetGimbalState(true);
+            }
+            else
+            {
+                Console.WriteLine("No gimbal on system. Maybe retry?");
+            }
         }
 
         private void ReadingChanged(object sender, InclinometerReadingChangedEventArgs e)
@@ -117,7 +125,7 @@ namespace MyFirstSensorProject
                 InclinometerReading reading = e.Reading;
 
                 pitch_raw = reading.PitchDegrees;
-                pitch_kalman.filter(reading.PitchDegrees);
+                //pitch_kalman.filter(reading.PitchDegrees);
 
                 /*
                 Console.WriteLine("\n\n\n\nPitch: {0,5:0.00}", reading.PitchDegrees);
@@ -144,10 +152,24 @@ namespace MyFirstSensorProject
             */
 
             Console.WriteLine("Pitch: {0,5:0.00}", pitch_raw);
+
+            if (pitch_raw < 90)
+            {
+                Console.WriteLine("Stepping Clockwise");
+            }
+            else if (pitch_raw > 90)
+            {
+                Console.WriteLine("Stepping Counter-Clockwise");
+            }
+
+            _serialPort.Write(Encoding.UTF8.GetBytes("a"), 0, 1);
+
+            /*
             if (pitch_kalman != null)
             {
                 Console.WriteLine("Kalman Pitch: {0,5:0.00}", pitch_kalman.estimate);
             }
+            */
         }
 
         /*
@@ -190,8 +212,9 @@ namespace MyFirstSensorProject
         }
         */
 
-        private void FindGimbalOnSystem()
+        private bool FindGimbalOnSystem()
         {
+            bool result = false;
             List<DeviceDescriptor> BluetoothDevices = new List<DeviceDescriptor>();
             foreach (ManagementObject ManObj in GetAllDevicesByGUID("{e0cbf06c-cd8b-4647-bb8a-263b43f0f974}"))
             {
@@ -276,7 +299,7 @@ namespace MyFirstSensorProject
                             SerialPort sp = (SerialPort)sender;
                             indata = sp.ReadExisting();
                             Console.Write(indata);
-                            if (indata == "oof")
+                            if (indata == "abcd")
                             {
                                 Console.WriteLine("Magic string was written");
                                 source.Cancel();
@@ -287,7 +310,8 @@ namespace MyFirstSensorProject
                             }
                         }
 
-                        _serialPort.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
+                        SerialDataReceivedEventHandler tempevent = new SerialDataReceivedEventHandler(DataReceivedHandler);
+                        _serialPort.DataReceived += tempevent;
 
                         try
                         {
@@ -316,6 +340,9 @@ namespace MyFirstSensorProject
                         else
                         {
                             Console.WriteLine("Woo hoo! Found it!");
+                            _serialPort.DataReceived -= tempevent;
+                            _serialPort.Write(Encoding.UTF8.GetBytes("1"), 0, 1);
+                            result = true;
                             break;
                         }
                     }
@@ -327,6 +354,7 @@ namespace MyFirstSensorProject
             }
             
             Console.WriteLine("End of Foreach Loop");
+            return result;
 
             //This is where we decide what to return, based on what has happened. Then, let's enable the gimbal!
             //And, of course, if nothing happened and no gimbal is present, we need to have some sort of "try again" logic.
