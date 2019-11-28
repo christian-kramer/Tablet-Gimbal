@@ -51,9 +51,11 @@ namespace MyFirstSensorProject
 
         private Inclinometer _inclinometer;
         private float pitch_raw;
+        /*
         private Kalman pitch_kalman;
         private Kalman roll_kalman;
         private Kalman yaw_kalman;
+        */
 
         private SerialPort _serialPort;
 
@@ -95,9 +97,12 @@ namespace MyFirstSensorProject
 
                 // Establish the event handler
                 _inclinometer.ReadingChanged += new TypedEventHandler<Inclinometer, InclinometerReadingChangedEventArgs>(ReadingChanged);
+
+                /*
                 pitch_kalman = new Kalman(10, 100, 0.01);
                 roll_kalman = new Kalman(45, 5, 0.01);
                 yaw_kalman = new Kalman(10, 5, 3);
+                */
             }
             else
             {
@@ -142,15 +147,6 @@ namespace MyFirstSensorProject
 
         private void OnTimedEvent(object source, ElapsedEventArgs e)
         {
-            //Debug.WriteLine("Timer Function Hit at {0:HH:mm:ss.fff}", e.SignalTime);
-            /*
-            Kalman kalman = new Kalman(68, 2, 4);
-            Debug.WriteLine(kalman.filter(75).ToString());
-            Debug.WriteLine(kalman.filter(71).ToString());
-            Debug.WriteLine(kalman.filter(70).ToString());
-            Debug.WriteLine(kalman.filter(74).ToString());
-            */
-
             Console.WriteLine("Pitch: {0,5:0.00}", pitch_raw);
 
             if (pitch_raw < 90)
@@ -163,13 +159,6 @@ namespace MyFirstSensorProject
             }
 
             _serialPort.Write(Encoding.UTF8.GetBytes("a"), 0, 1);
-
-            /*
-            if (pitch_kalman != null)
-            {
-                Console.WriteLine("Kalman Pitch: {0,5:0.00}", pitch_kalman.estimate);
-            }
-            */
         }
 
         /*
@@ -398,6 +387,8 @@ namespace MyFirstSensorProject
 
         private void _notifyIconClick(object sender, EventArgs e)
         {
+            //We can't enable the gimbal if we didn't find it on the system.
+            //Check to see if a gimbal is present, here.
             SetGimbalState(!state);
         }
 
