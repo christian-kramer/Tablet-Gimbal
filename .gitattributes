@@ -64,4 +64,4 @@
 
 *.mk linguist-generated=true
 *.xml linguist-generated=true
-*.x linguist-generated=true
+*.X linguist-generated=true
