@@ -64,5 +64,6 @@
 
 *.mk linguist-generated=true
 *.xml linguist-generated=true
-electrical/firmware/* linguist-generated=true
+*.c linguist-generated=true
+*.h linguist-generated=true
 *.gcode linguist-generated=true
