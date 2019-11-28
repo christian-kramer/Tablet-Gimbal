@@ -64,6 +64,7 @@
 
 *.mk linguist-generated=true
 *.xml linguist-generated=true
-*.c linguist-generated=true
+Electrical/Firmware/* linguist-generated=true
 *.h linguist-generated=true
 *.gcode linguist-generated=true
+Visual Studio/* linguist-language=C#
