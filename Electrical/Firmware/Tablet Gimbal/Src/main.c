@@ -77,38 +77,31 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	  }
 	  else
 	  {
+
 		  //This will be a movement instruction.
 
-		  //Before doing the following, let's just toggle an LED upon receiving "a" or something. Prove it's getting the message.
 
-		  if (bigbyte == 0b01100001)
-		  {
-			  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, RESET);
-			  int i = 0;
-			  while (i < 1000) { i++; }
-			  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, SET);
-		  }
-		  /*
+		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, RESET);
 
 		  //First, un-sleep A4988 (make sure reset pin isn't causing issues)
-		  HAL_GPIO_WritePin(GPIOA, STEP_SLP_Pin, SET);
+		  HAL_GPIO_WritePin(GPIOA, STEP_SLP_Pin, (bigbyte >> 3) & 1U);
 
 		  //Next, set direction
-		  HAL_GPIO_WritePin(GPIOA, STEP_DIR_Pin, SET);
+		  HAL_GPIO_WritePin(GPIOA, STEP_DIR_Pin, (bigbyte >> 7) & 1U);
 
 		  //Next, set microsteps
-		  HAL_GPIO_WritePin(GPIOA, STEP_MS1_Pin, RESET);
-		  HAL_GPIO_WritePin(GPIOA, STEP_MS2_Pin, RESET);
-		  HAL_GPIO_WritePin(GPIOA, STEP_MS3_Pin, RESET);
+		  HAL_GPIO_WritePin(GPIOA, STEP_MS1_Pin, (bigbyte >> 6) & 1U);
+		  HAL_GPIO_WritePin(GPIOA, STEP_MS2_Pin, (bigbyte >> 5) & 1U);
+		  HAL_GPIO_WritePin(GPIOA, STEP_MS3_Pin, (bigbyte >> 4) & 1U);
 
-		  //Then, step
-		  for (int i = 0; i < 200; i++)
-		  {
-			  HAL_GPIO_WritePin(GPIOA, STEP_STEP_Pin, SET);
-			  HAL_Delay(1);
-			  HAL_GPIO_WritePin(GPIOA, STEP_STEP_Pin, RESET);
-		  }
-		  */
+		  //Finally, step
+		  HAL_GPIO_WritePin(GPIOA, STEP_STEP_Pin, SET);
+
+		  int i = 0;
+		  while (i < 100) { i++; } //short delay
+
+		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, SET);
+		  HAL_GPIO_WritePin(GPIOA, STEP_STEP_Pin, RESET);
 	  }
   }
 }
