@@ -166,6 +166,85 @@ namespace MyFirstSensorProject
              * Well, we know each step is 1.8 degrees.
              * We also know the stepper driver is capable of stepping 1.8, 0.9, 0.45, 0.225, and 0.1125 degrees.
              */
+
+            var MS1 = 6;
+            var MS2 = 5;
+            var MS3 = 4;
+            var Direction = 7;
+
+            byte[] commandgimbal = { 0b00001000 };
+            var bitArray = new BitArray(commandgimbal);
+            //bitArray.Set(3, state);
+
+            int target_angle = 90;
+            double distanceFromTarget = pitch_raw - target_angle;
+            if (distanceFromTarget < 0)
+            {
+                distanceFromTarget *= -1;
+                bitArray.Set(Direction, true);
+            }
+            //Alright, so if our target is 90 and our pitch is 95.125, we'll come out with 5.125 degrees.
+            //Likewise, if our target is 45 and our pitch is 31.983, we'll come out with -13.017
+            //If our difference is greater than 10 degrees, let's full-step
+            //If our difference is greater than 5 degrees, let's half-step
+            //If our difference is greater than 2.5 degrees, let's quarter-step
+            //If our difference is greater than 1.25 degrees, let's eighth-step
+            //If our difference is greater than 0.55 degrees, let's sixteenth-step
+            var full_step_degrees = 10;                    // 10
+            var half_step_degrees = full_step_degrees / 2; // 5
+            var quar_step_degrees = half_step_degrees / 2; // 2.5
+            var eigh_step_degrees = quar_step_degrees / 2; // 1.25
+            var sixt_step_degrees = eigh_step_degrees / 2; // 0.55
+
+            if (distanceFromTarget > 0 && distanceFromTarget <= sixt_step_degrees)
+            {
+                //Between 0 and 0.55
+                bitArray.Set(MS1, true);
+                bitArray.Set(MS2, true);
+                bitArray.Set(MS3, true);
+            }
+            else if (distanceFromTarget >= sixt_step_degrees && distanceFromTarget <= eigh_step_degrees)
+            {
+                //Between 0.55 and 1.25
+                bitArray.Set(MS1, true);
+                bitArray.Set(MS2, true);
+                bitArray.Set(MS3, true);
+            }
+            else if (distanceFromTarget >= eigh_step_degrees && distanceFromTarget <= quar_step_degrees)
+            {
+                //Between 1.25 and 2.5
+                bitArray.Set(MS1, true);
+                bitArray.Set(MS2, true);
+                bitArray.Set(MS3, false);
+            }
+            else if (distanceFromTarget >= quar_step_degrees && distanceFromTarget <= half_step_degrees)
+            {
+                //Between 2.5 and 5
+                bitArray.Set(MS1, false);
+                bitArray.Set(MS2, true);
+                bitArray.Set(MS3, false);
+            }
+            else if (distanceFromTarget >= half_step_degrees && distanceFromTarget <= full_step_degrees)
+            {
+                //Between 5 and 10
+                bitArray.Set(MS1, true);
+                bitArray.Set(MS2, false);
+                bitArray.Set(MS3, false);
+            }
+            else if (distanceFromTarget > 10)
+            {
+                //Greater than 10
+                bitArray.Set(MS1, false);
+                bitArray.Set(MS2, false);
+                bitArray.Set(MS3, false);
+            }
+
+            bitArray.CopyTo(commandgimbal, 0);
+            _serialPort.Write(commandgimbal, 0, 1);
+
+
+
+            /*
             if (pitch_raw > 90)
             {
                 //Console.WriteLine("Stepping Clockwise");
@@ -179,6 +258,7 @@ namespace MyFirstSensorProject
                 byte[] bytetowrite = { 0b11111000 };
                 _serialPort.Write(bytetowrite, 0, 1);
             }
+            */
         }
 
         /*
