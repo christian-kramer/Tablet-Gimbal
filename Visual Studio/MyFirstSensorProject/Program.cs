@@ -16,6 +16,7 @@ using System.Text.RegularExpressions;
 using System.IO.Ports;
 using System.Threading;
 using System.Text;
+using System.Collections;
 
 namespace MyFirstSensorProject
 {
@@ -83,7 +84,7 @@ namespace MyFirstSensorProject
 
             _notifyIcon.Click += new EventHandler(_notifyIconClick);
 
-            myTimer = new System.Timers.Timer(1000);
+            myTimer = new System.Timers.Timer(1);
             myTimer.Elapsed += OnTimedEvent;
             myTimer.AutoReset = true;
             myTimer.Enabled = state;
@@ -113,14 +114,21 @@ namespace MyFirstSensorProject
 
             Console.WriteLine("\n\n\n");
 
-            if (FindGimbalOnSystem())
+            void findgimballoop()
             {
-                SetGimbalState(true);
+
+                if (FindGimbalOnSystem())
+                {
+                    SetGimbalState(true);
+                }
+                else
+                {
+                    Console.WriteLine("No gimbal on system. Maybe retry?");
+                    findgimballoop();
+                }
             }
-            else
-            {
-                Console.WriteLine("No gimbal on system. Maybe retry?");
-            }
+
+            findgimballoop();
         }
 
         private void ReadingChanged(object sender, InclinometerReadingChangedEventArgs e)
@@ -147,18 +155,30 @@ namespace MyFirstSensorProject
 
         private void OnTimedEvent(object source, ElapsedEventArgs e)
         {
-            Console.WriteLine("Pitch: {0,5:0.00}", pitch_raw);
-
-            if (pitch_raw < 90)
+            //Console.WriteLine("Pitch: {0,5:0.00}", pitch_raw);
+            //This is where control logic comes in.
+            /* This is where control logic comes in.
+             * 
+             * First, we know what angle we're at.
+             * Second, we know what angle we need to get to.
+             * Third, we need to figure out "how quickly does it make sense to turn in order to close the gap?"
+             * 
+             * Well, we know each step is 1.8 degrees.
+             * We also know the stepper driver is capable of stepping 1.8, 0.9, 0.45, 0.225, and 0.1125 degrees.
+             */
+            if (pitch_raw > 90)
             {
-                Console.WriteLine("Stepping Clockwise");
+                //Console.WriteLine("Stepping Clockwise");
+                byte[] bytetowrite = { 0b00001000 };
+                _serialPort.Write(bytetowrite, 0, 1);
             }
-            else if (pitch_raw > 90)
+            else if (pitch_raw < 90)
             {
-                Console.WriteLine("Stepping Counter-Clockwise");
+                //Console.WriteLine("Stepping Counter-Clockwise");
+                //_serialPort.Write(Encoding.UTF8.GetBytes("a"), 0, 1);
+                byte[] bytetowrite = { 0b11111000 };
+                _serialPort.Write(bytetowrite, 0, 1);
             }
-
-            _serialPort.Write(Encoding.UTF8.GetBytes("a"), 0, 1);
         }
 
         /*
@@ -383,6 +403,12 @@ namespace MyFirstSensorProject
                 Debug.WriteLine("Gimbal Off");
                 _notifyIcon.Icon = disabledIcon;
             }
+
+            byte[] commandgimbal = { 0b00000000 };
+            var bitArray = new BitArray(commandgimbal);
+            bitArray.Set(3, state);
+            bitArray.CopyTo(commandgimbal, 0);
+            _serialPort.Write(commandgimbal, 0, 1);
         }
 
         private void _notifyIconClick(object sender, EventArgs e)
@@ -397,6 +423,7 @@ namespace MyFirstSensorProject
             _notifyIcon.Visible = false; //TODO: Do this on other types of closing
             state = false;
             Debug.WriteLine("Gimbal Off, Exiting...");
+            SetGimbalState(false);
             Application.Exit();
         }
     }
