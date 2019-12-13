@@ -109,10 +109,53 @@ namespace MyFirstSensorProject
             {
                 Debug.WriteLine("No Inclinometer Detected!");
                 Console.WriteLine("No Inclinometer Detected!");
+
+                
+
+
+
+
+                string message = "This device does not have an Inclinometer, and therefore we cannot determine the device's position.\r\n\r\nThe application will now close.";
+                string caption = "No Inclinometer Detected";
+                MessageBoxButtons buttons = MessageBoxButtons.OK;
+                DialogResult result;
+
+                result = MessageBox.Show(message, caption, buttons);
+                Application.Exit();
+                Environment.Exit(1);
+
             }
 
 
             Console.WriteLine("\n\n\n");
+
+
+            Form f = new Form();
+            f.StartPosition = FormStartPosition.CenterScreen;
+            f.Size = new System.Drawing.Size(500, 200);
+            f.FormBorderStyle = FormBorderStyle.FixedSingle;
+            f.MaximizeBox = false;
+            f.MinimizeBox = false;
+            f.Icon = enabledIcon;
+            f.Text = "Tablet Gimbal";
+
+            Label t = new Label();
+            t.TextAlign = ContentAlignment.MiddleCenter;
+            t.Text = "Searching for Gimbal, please wait...";
+            t.Size = new System.Drawing.Size(400, 30);
+            t.Left = (f.ClientSize.Width - t.Width) / 2;
+            t.Top = ((f.ClientSize.Height - t.Height) / 2) - 50;
+            f.Controls.Add(t);
+
+
+            ProgressBar p = new ProgressBar();
+            p.Location = new System.Drawing.Point(10, 10);
+            p.Size = new System.Drawing.Size(400, 30);
+            p.Left = (f.ClientSize.Width - p.Width) / 2;
+            p.Top = (f.ClientSize.Height - p.Height) / 2;
+            p.MarqueeAnimationSpeed = 30;
+            p.Style = ProgressBarStyle.Marquee;
+            f.Controls.Add(p);
 
             void findgimballoop()
             {
@@ -120,6 +163,7 @@ namespace MyFirstSensorProject
                 if (FindGimbalOnSystem())
                 {
                     SetGimbalState(true);
+                    f.Close();
                 }
                 else
                 {
@@ -128,7 +172,11 @@ namespace MyFirstSensorProject
                 }
             }
 
-            findgimballoop();
+            ThreadStart work = findgimballoop;
+            Thread thread = new Thread(work);
+            thread.Start();
+
+            f.ShowDialog();
         }
 
         private void ReadingChanged(object sender, InclinometerReadingChangedEventArgs e)
@@ -231,7 +279,7 @@ namespace MyFirstSensorProject
                 bitArray.Set(MS2, false);
                 bitArray.Set(MS3, false);
             }
-            else if (distanceFromTarget > 10)
+            else if (distanceFromTarget > full_step_degrees)
             {
                 //Greater than 10
                 bitArray.Set(MS1, false);
@@ -473,7 +521,7 @@ namespace MyFirstSensorProject
         {
             state = setstate;
             myTimer.Enabled = state;
-            if (state)
+            if (state && _serialPort != null)
             {
                 Debug.WriteLine("Gimbal On");
                 _notifyIcon.Icon = enabledIcon;
@@ -488,7 +536,10 @@ namespace MyFirstSensorProject
             var bitArray = new BitArray(commandgimbal);
             bitArray.Set(3, state);
             bitArray.CopyTo(commandgimbal, 0);
-            _serialPort.Write(commandgimbal, 0, 1);
+            if (_serialPort != null)
+            {
+                _serialPort.Write(commandgimbal, 0, 1);
+            }
         }
 
         private void _notifyIconClick(object sender, EventArgs e)
