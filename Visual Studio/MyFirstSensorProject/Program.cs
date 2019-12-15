@@ -121,8 +121,7 @@ namespace MyFirstSensorProject
                 DialogResult result;
 
                 result = MessageBox.Show(message, caption, buttons);
-                Application.Exit();
-                Environment.Exit(1);
+                HandleExit();
 
             }
 
@@ -168,7 +167,22 @@ namespace MyFirstSensorProject
                 else
                 {
                     Console.WriteLine("No gimbal on system. Maybe retry?");
-                    findgimballoop();
+
+                    string message = "No Gimbal in pairing mode was detected. Retry?";
+                    string caption = "Gimbal Pairing Failed";
+                    MessageBoxButtons buttons = MessageBoxButtons.YesNo;
+                    DialogResult result;
+
+                    result = MessageBox.Show(message, caption, buttons);
+
+                    if (result == DialogResult.Yes)
+                    {
+                        findgimballoop();
+                    }
+                    else
+                    {
+                        HandleExit();
+                    }
                 }
             }
 
@@ -551,11 +565,17 @@ namespace MyFirstSensorProject
 
         private void OnExitClick(object sender, EventArgs e)
         {
+            HandleExit();
+        }
+
+        private void HandleExit()
+        {
             _notifyIcon.Visible = false; //TODO: Do this on other types of closing
             state = false;
             Debug.WriteLine("Gimbal Off, Exiting...");
             SetGimbalState(false);
             Application.Exit();
+            Environment.Exit(1);
         }
     }
 }
